@@ -8,7 +8,7 @@ const route = useRoute()
 <template>
   <div class="flex h-screen bg-background">
     <Sidebar v-if="route.name !== 'login'" />
-    <main class="flex-1 overflow-y-auto p-8" :class="{'p-0': route.name === 'login'}">
+    <main class="flex-1 overflow-y-auto p-0" :class="{'p-8': route.name != 'login'} ">
       <RouterView />
     </main>
   </div>

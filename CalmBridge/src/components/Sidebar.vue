@@ -10,7 +10,7 @@ const navigation = [
   { name: 'Patients', path: '/patients', icon: Users },
   { name: 'Consultations', path: '/consultations', icon: Activity },
   // Optional mock links for better UI look
-  { name: 'Settings', path: '#', icon: Settings },
+  { name: 'Settings', path: '/settings', icon: Settings },
 ]
 
 const isActive = (path) => {
@@ -25,10 +25,10 @@ const isActive = (path) => {
   <aside class="w-64 bg-surface border-r border-border flex flex-col transition-all duration-300">
     <div class="h-20 flex items-center px-8 border-b border-border">
       <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
-          <Activity class="w-5 h-5 text-white" />
+        <div class="w-8 h-8 rounded-lg overflow-hidden shadow-blue-700 shadow-primary/25">
+          <img src="/loggo.png" alt="Logo" class="w-full h-full object-cover" />
         </div>
-        <h1 class="text-xl font-semibold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
+        <h1 class="text-xl font-semibold bg-gradient-to-r from-white via-blue-200 to-primary bg-clip-text text-transparent drop-shadow-sm">
           CalmBridge
         </h1>
       </div>
@@ -42,21 +42,21 @@ const isActive = (path) => {
         class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group"
         :class="[
           isActive(item.path)
-            ? 'bg-primary/10 text-primary font-medium'
+            ? 'bg-gradient-to-r from-blue-900 via-blue-600  to-blue-700 text-white font-medium '
             : 'text-text-muted hover:bg-surface-hover hover:text-white'
         ]"
-      >
+      > 
         <component
           :is="item.icon"
           class="w-5 h-5 transition-transform duration-200 group-hover:scale-110"
-          :class="isActive(item.path) ? 'text-primary' : 'text-text-muted group-hover:text-white'"
+          :class="isActive(item.path) ? 'text-white' : 'text-text-muted group-hover:text-white'"
         />
         {{ item.name }}
       </router-link>
     </nav>
 
     <div class="p-4 border-t border-border">
-      <button class="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-text-muted hover:bg-surface-hover hover:text-white transition-all duration-200 group">
+      <button class="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-text-muted hover:bg-red-500/10 hover:text-red-500 transition-all duration-200 group">
         <LogOut class="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-200" />
         <span>Logout</span>
       </button>

@@ -4,7 +4,8 @@ import DashboardView from '../views/DashboardView.vue'
 import PatientsView from '../views/PatientsView.vue'
 import ConsultationsListView from '../views/ConsultationsListView.vue'
 import ActiveSessionView from '../views/ActiveSessionView.vue'
-
+import ConsultationDetailsView from '../views/ConsultationDetailsView.vue'
+import Settings from '../views/Settings.vue';
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -32,6 +33,16 @@ const router = createRouter({
       path: '/session/:id',
       name: 'session',
       component: ActiveSessionView
+    },
+    {
+      path: '/consultation/:id',
+      name: 'consultationDetails',
+      component: ConsultationDetailsView
+    }
+    , {
+      path: '/settings',
+      name: 'settings',
+      component: Settings
     }
   ]
 })

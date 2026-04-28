@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { Search, Plus, Play, ChevronRight, X } from 'lucide-vue-next'
+import { Search, Plus, FolderOpen, ChevronRight, X, Edit, Trash2 } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -39,12 +39,12 @@ const addNewPatient = () => {
   <div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-3xl font-bold tracking-tight text-white">Patients</h1>
+        <h1 class="text-3xl font-bold tracking-tight text-text">Patients</h1>
         <p class="text-text-muted mt-2">Manage your patients and start therapy sessions.</p>
       </div>
       <button 
         @click="showAddPatientModal = true"
-        class="bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-all shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5"
+        class="bg-gradient-to-r from-blue-900 via-blue-600  to-blue-700 text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-all shadow-lg shadow-primary/40 hover:shadow-primary/60 hover:-translate-y-0.5 ring-1 ring-white/10 hover:bg-primary"
       >
         <Plus class="w-5 h-5" />
         New Patient
@@ -58,7 +58,7 @@ const addNewPatient = () => {
         <input 
           type="text" 
           placeholder="Search patients..." 
-          class="w-full bg-surface border border-border rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+          class="w-full bg-surface border border-border rounded-xl pl-10 pr-4 py-2.5 text-text placeholder-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
         />
       </div>
     </div>
@@ -70,7 +70,6 @@ const addNewPatient = () => {
           <tr>
             <th class="px-6 py-4 text-sm font-medium text-text-muted">Patient Name</th>
             <th class="px-6 py-4 text-sm font-medium text-text-muted">Diagnosis</th>
-            <th class="px-6 py-4 text-sm font-medium text-text-muted">Sessions</th>
             <th class="px-6 py-4 text-sm font-medium text-text-muted">Last Session</th>
             <th class="px-6 py-4 text-sm font-medium text-text-muted text-right">Actions</th>
           </tr>
@@ -83,7 +82,7 @@ const addNewPatient = () => {
                   {{ patient.name.charAt(0) }}
                 </div>
                 <div>
-                  <p class="font-medium text-white">{{ patient.name }}</p>
+                  <p class="font-medium text-text">{{ patient.name }}</p>
                   <p class="text-sm text-text-muted">{{ patient.age }} yrs</p>
                 </div>
               </div>
@@ -94,22 +93,24 @@ const addNewPatient = () => {
               </span>
             </td>
             <td class="px-6 py-4 text-text-muted">
-              {{ patient.sessionsCount }} completed
-            </td>
-            <td class="px-6 py-4 text-text-muted">
               {{ patient.lastSession }}
             </td>
             <td class="px-6 py-4 text-right">
-              <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button 
-                  @click="startSession(patient.id)"
-                  class="flex items-center gap-1 bg-primary/10 text-primary hover:bg-primary/20 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-                >
-                  <Play class="w-4 h-4 fill-current" />
-                  Start VR
+              <div class="flex items-center justify-end gap-3 transition-opacity">
+                <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-text hover:bg-surface-hover transition-colors">
+                  <Edit class="w-4 h-4" />
+                  Edit
                 </button>
-                <button class="p-1.5 text-text-muted hover:text-white transition-colors">
-                  <ChevronRight class="w-5 h-5" />
+                <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-colors">
+                  <Trash2 class="w-4 h-4" />
+                  Delete
+                </button>
+                <button 
+                  @click="router.push('/consultations')"
+                  class="flex items-center gap-1.5 bg-primary/10 text-primary hover:bg-primary/20 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <FolderOpen class="w-4 h-4" />
+                  View Records
                 </button>
               </div>
             </td>
@@ -122,8 +123,8 @@ const addNewPatient = () => {
     <div v-if="showAddPatientModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
       <div class="bg-surface border border-border rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
         <div class="px-6 py-4 border-b border-border flex items-center justify-between">
-          <h3 class="text-xl font-semibold text-white">Add New Patient</h3>
-          <button @click="showAddPatientModal = false" class="text-text-muted hover:text-white transition-colors">
+          <h3 class="text-xl font-semibold text-text">Add New Patient</h3>
+          <button @click="showAddPatientModal = false" class="text-text-muted hover:text-primary transition-colors">
             <X class="w-5 h-5" />
           </button>
         </div>
@@ -134,7 +135,7 @@ const addNewPatient = () => {
               v-model="newPatient.name"
               type="text" 
               placeholder="e.g. John Doe"
-              class="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white placeholder-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+              class="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-text placeholder-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
             />
           </div>
           <div>
@@ -143,14 +144,14 @@ const addNewPatient = () => {
               v-model="newPatient.age"
               type="number" 
               placeholder="e.g. 35"
-              class="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white placeholder-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+              class="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-text placeholder-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
             />
           </div>
           <div>
             <label class="block text-sm font-medium text-text-muted mb-1.5">Diagnosis</label>
             <select 
               v-model="newPatient.diagnosis"
-              class="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white placeholder-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
+              class="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-text placeholder-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
             >
               <option value="" disabled selected>Select diagnosis...</option>
               <option value="Social Anxiety Disorder">Social Anxiety Disorder</option>
@@ -164,13 +165,13 @@ const addNewPatient = () => {
         <div class="px-6 py-4 border-t border-border bg-surface-hover/30 flex justify-end gap-3">
           <button 
             @click="showAddPatientModal = false"
-            class="px-5 py-2.5 rounded-xl font-medium text-white hover:bg-surface-hover transition-colors"
+            class="px-5 py-2.5 rounded-xl font-medium text-text hover:bg-surface-hover transition-colors"
           >
             Cancel
           </button>
           <button 
             @click="addNewPatient"
-            class="bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl font-medium transition-colors"
+            class="bg-gradient-to-r from-primary to-primary-hover text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-lg shadow-primary/40 hover:shadow-primary/60 hover:-translate-y-0.5 ring-1 ring-white/10"
             :disabled="!newPatient.name || !newPatient.age || !newPatient.diagnosis"
             :class="{'opacity-50 cursor-not-allowed': !newPatient.name || !newPatient.age || !newPatient.diagnosis}"
           >
