@@ -6,6 +6,8 @@ import ConsultationsListView from '../views/ConsultationsListView.vue'
 import ActiveSessionView from '../views/ActiveSessionView.vue'
 import ConsultationDetailsView from '../views/ConsultationDetailsView.vue'
 import Settings from '../views/Settings.vue';
+import liveMonitoring from '../views/liveMonitoring.vue'; 
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -43,6 +45,10 @@ const router = createRouter({
       path: '/settings',
       name: 'settings',
       component: Settings
+    }, {
+      path: '/live-monitoring',
+      name: 'liveMonitoring',
+      component: liveMonitoring
     }
   ]
 })

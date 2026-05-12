@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue';
-import socket from '../services/socket';   
+import { socket } from '../services/socket.js';   
 
 export function useRealtimeData() {
     const latestData = ref(null);
