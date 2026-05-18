@@ -3,8 +3,9 @@ import { socket } from '../services/socket.js';
 
 export function useRealtimeData() {
     const latestData = ref(null);
-
     const bufferSize = ref(0);
+    const stressData = ref(null);
+    
 
     onMounted(() => {
         socket.on('connect', () => {
