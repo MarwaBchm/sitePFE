@@ -1,23 +1,53 @@
 <script setup>
-import { Search, Plus, Calendar, Clock, User, ChevronRight, Activity, X } from 'lucide-vue-next'
+import {
+  Search,
+  Plus,
+  User,
+  Activity,
+  X
+} from 'lucide-vue-next'
+
 import { useRouter } from 'vue-router'
-import { ref, computed , onMounted} from 'vue'
+
+import {
+  ref,
+  computed,
+  onMounted,
+  watch
+} from 'vue'
+
+import {
+  useRealtimeData
+} from '../composables/useRealtimeData'
 
 const router = useRouter()
 
 const showNewSessionModal = ref(false)
+
 const selectedExamRoom = ref('')
 
 const studentsMonitoring = ref([])
+
 const loading = ref(true)
+
+const {
+  realtimeStudents
+} = useRealtimeData()
+
+// ======================================
+// FETCH STUDENTS
+// ======================================
 
 onMounted(async () => {
 
   try {
 
-    const res = await fetch('http://localhost:3000/students')
+    const res = await fetch(
+      'https://calmebridgeback.onrender.com/students'
+    )
 
-    studentsMonitoring.value = await res.json()
+    studentsMonitoring.value =
+      await res.json()
 
   } catch (error) {
 
@@ -26,58 +56,154 @@ onMounted(async () => {
   } finally {
 
     loading.value = false
-
   }
-
 })
+
+// ======================================
+// REALTIME UPDATES
+// ======================================
+
+watch(
+
+  realtimeStudents,
+
+  (newRealtime) => {
+
+    Object.entries(
+      newRealtime
+    ).forEach(
+
+      ([deviceId, data]) => {
+
+        const student =
+          studentsMonitoring.value.find(
+
+            s =>
+              s.deviceId === deviceId
+          )
+
+        if (student) {
+
+          student.heartRate =
+            data.heartRate
+
+          student.stressLevel =
+            data.stressLevel
+
+          student.connected =
+            data.connected
+
+          console.log(
+            'UPDATED STUDENT:',
+            student
+          )
+        }
+      }
+    )
+  },
+
+  { deep: true }
+)
+
+// ======================================
+// FILTERS
+// ======================================
+
 const searchQuery = ref('')
-const filterStress = ref('All Levels')
-const filterConnection = ref('All Connections')
+
+const filterStress =
+  ref('All Levels')
+
+const filterConnection =
+  ref('All Connections')
+
+// ======================================
+// START SESSION
+// ======================================
 
 const startMonitoring = () => {
 
   showNewSessionModal.value = false
 
   router.push('/monitoring')
-
 }
+
+// ======================================
+// FILTERED STUDENTS
+// ======================================
 
 const filteredStudents = computed(() => {
 
-  return studentsMonitoring.value.filter(student => {
+  return studentsMonitoring.value
 
-    const fullName =
-      `${student.firstName} ${student.lastName}`
+    .map(student => {
 
-    const matchSearch =
-      fullName
-        .toLowerCase()
-        .includes(searchQuery.value.toLowerCase())
+      const realtime =
+  realtimeStudents.value.find(
 
-    const matchStress =
-      filterStress.value === 'All Levels'
-        ? true
-        : student.stressLevel === filterStress.value
+    s =>
+      s.deviceId ===
+      student.deviceId
+  )
 
-    const matchConnection =
-      filterConnection.value === 'All Connections'
-        ? true
-        : filterConnection.value === 'Connected'
-          ? student.connected
-          : !student.connected
+      // Create merged reactive object
+      return {
 
-    return (
-      matchSearch &&
-      matchStress &&
-      matchConnection
-    )
+        ...student,
 
-  })
+        heartRate:
+          realtime?.heartRate ??
+          student.heartRate,
 
+        stressLevel:
+          realtime?.stressLevel ??
+          student.stressLevel,
+
+        connected:
+          realtime?.connected ??
+          student.connected,
+      }
+    })
+
+    .filter(student => {
+
+      const fullName =
+        `${student.firstName} ${student.lastName}`
+
+      const matchSearch =
+        fullName
+          .toLowerCase()
+          .includes(
+            searchQuery.value.toLowerCase()
+          )
+
+      const matchStress =
+        filterStress.value ===
+        'All Levels'
+          ? true
+          : student.stressLevel ===
+            filterStress.value
+
+      const matchConnection =
+        filterConnection.value ===
+        'All Connections'
+          ? true
+          : filterConnection.value ===
+            'Connected'
+            ? student.connected
+            : !student.connected
+
+      return (
+
+        matchSearch &&
+
+        matchStress &&
+
+        matchConnection
+      )
+    })
 })
-
 </script>
-
 <template>
   <div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
     <div class="flex items-center justify-between">
