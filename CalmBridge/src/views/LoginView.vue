@@ -130,10 +130,9 @@ const handleLogin = async () => {
 
         <form class="space-y-4" @submit.prevent="handleLogin">
           <div>
-            <label class="block text-sm font-medium text-text-muted mb-1.5">Email Address</label>
+            <label class="block text-sm font-medium text-text-muted mb-1.5">Email Address / username</label>
             <input 
-              v-model="identifier"
-              type="email" 
+              v-model="identifier" 
               placeholder="dr.smith@clinic.com"
               class="w-full bg-surface border border-border rounded-xl px-4 py-2.5 text-text placeholder-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
             />

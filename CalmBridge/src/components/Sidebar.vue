@@ -8,7 +8,7 @@ const route = useRoute()
 const navigation = [
   { name: 'Dashboard', path: '/', icon: LayoutDashboard },
   { name: 'Patients', path: '/patients', icon: Users },
-  { name: 'Consultations', path: '/consultations', icon: Activity },
+  { name: 'Monitoring Dashboard', path: '/MonitoringDashboard', icon: Activity },
   // Optional mock links for better UI look
   { name: 'Settings', path: '/settings', icon: Settings },
 ]
