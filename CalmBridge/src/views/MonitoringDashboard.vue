@@ -202,14 +202,18 @@ const filteredStudents = computed(() => {
         matchConnection
       )
     })
+    .sort((a, b) => {
+      // Connected first
+      return Number(b.connected) - Number(a.connected)
+    })
 })
 </script>
 <template>
   <div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-3xl font-bold tracking-tight text-text">Exam Monitoring Dashboard</h1>
-        <p class="text-text-muted mt-2">Realtime student stress monitoring during exams</p>
+        <h1 class="text-3xl font-bold tracking-tight text-text"> Monitoring Dashboard</h1>
+        <p class="text-text-muted mt-2">Realtime Patients stress monitoring during exams</p>
       </div>
       <button 
         @click="showNewSessionModal = true"
@@ -227,7 +231,7 @@ const filteredStudents = computed(() => {
         <input 
           v-model="searchQuery"
           type="text" 
-          placeholder="Search by student name..." 
+          placeholder="Search by patient name..." 
           class="w-full bg-surface border border-border rounded-xl pl-10 pr-4 py-2.5 text-text placeholder-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
         />
       </div>
@@ -249,7 +253,7 @@ const filteredStudents = computed(() => {
       <table class="w-full text-left">
         <thead class="bg-surface-hover/30 border-b border-border">
           <tr>
-            <th class="px-6 py-4 text-sm font-medium text-text-muted">Student</th>
+            <th class="px-6 py-4 text-sm font-medium text-text-muted">Patient</th>
             <th class="px-6 py-4 text-sm font-medium text-text-muted">Device</th>
             <th class="px-6 py-4 text-sm font-medium text-text-muted">Heart Rate</th>
             <th class="px-6 py-4 text-sm font-medium text-text-muted">Stress Level</th>

@@ -7,6 +7,7 @@ import ActiveSessionView from '../views/ActiveSessionView.vue'
 import ConsultationDetailsView from '../views/ConsultationDetailsView.vue'
 import Settings from '../views/Settings.vue';
 import liveMonitoring from '../views/liveMonitoring.vue'; 
+import PatientRecordsView from '../views/PatientRecordsView.vue'
 
 import { isAuthenticated } from '../utils/auth'
 
@@ -52,6 +53,10 @@ const router = createRouter({
       path: '/live-monitoring',
       name: 'liveMonitoring',
       component: liveMonitoring
+    }, {
+      path: '/records/:id',
+      name: 'patientRecords',
+      component: PatientRecordsView
     }
   ]
 })
