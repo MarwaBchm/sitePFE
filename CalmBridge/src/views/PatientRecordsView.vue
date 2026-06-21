@@ -39,11 +39,10 @@ import {
 } from 'lucide-vue-next'
 import {
   getPatientById,
-  getConsultations,
-  createConsultation,
-  updateConsultation,
-  deleteConsultation,
-  getMonitoringSessions,
+  getPatientSessions,
+  createSession,
+  updateSession,
+  deleteSession,
 } from '../services/recordsService.js'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
@@ -80,12 +79,15 @@ const pageSize = 10
 
 // ─── Computed: patient initials ───────────────────────────────────────────────
 const initials = computed(() => {
-  if (!patient.value) return '?'
-  return `${(patient.value.firstName || '')[0] || ''}${(patient.value.lastName || '')[0] || ''}`.toUpperCase()
+  if (!patient.value?.user) return '?'
+
+  return `${patient.value.user.firstName?.[0] || ''}${patient.value.user.lastName?.[0] || ''}`.toUpperCase()
 })
 
 const fullName = computed(() =>
-  patient.value ? `${patient.value.firstName} ${patient.value.lastName}` : '—'
+  patient.value
+    ? `${patient.value.user?.firstName || ''} ${patient.value.user?.lastName || ''}`
+    : '—'
 )
 
 // ─── Computed: stats ──────────────────────────────────────────────────────────
@@ -264,23 +266,28 @@ function formatDateTime(val) {
 // ─── Data fetch ───────────────────────────────────────────────────────────────
 async function fetchAll() {
   loading.value = true
-  error.value = null
+
   try {
-    const [pRes, cRes, sRes] = await Promise.allSettled([
+    const [pRes, sRes] = await Promise.all([
       getPatientById(patientId),
-      getConsultations(patientId),
-      getMonitoringSessions(patientId),
+      getPatientSessions(patientId),
     ])
-    if (pRes.status === 'fulfilled') patient.value = pRes.value.data
-    if (cRes.status === 'fulfilled') consultations.value = cRes.value.data ?? []
-    if (sRes.status === 'fulfilled') sessions.value = sRes.value.data ?? []
+
+    console.log('PATIENT', pRes.data)
+    console.log('SESSIONS', sRes.data)
+
+    patient.value = pRes.data
+
+    consultations.value = sRes.data || []
+    sessions.value = sRes.data || []
+
   } catch (e) {
-    error.value = 'Failed to load patient data.'
+    console.error(e)
+    error.value = e
   } finally {
     loading.value = false
   }
 }
-
 onMounted(fetchAll)
 
 // ─── Consultation modal ───────────────────────────────────────────────────────
@@ -305,25 +312,28 @@ function closeModal() {
   showModal.value = false
   editingConsultation.value = null
 }
-
+const user = JSON.parse(localStorage.getItem('user'))
 async function saveConsultation() {
+
   saving.value = true
   try {
     const payload = {
-      patientId,
+      studentId: Number(patientId),
+      therapistId: Number(user.id),
       sessionSummary: form.value.summary,
       observations: form.value.observations,
       recommendations: form.value.recommendations,
       stressAssessment: form.value.stressAssessment,
     }
     if (editingConsultation.value) {
-      await updateConsultation(editingConsultation.value.id, payload)
+      console.log('PAYLOAD', payload)
+      await updateSession(editingConsultation.value.id, payload)
     } else {
-      await createConsultation(payload)
+      await createSession(payload)
     }
     closeModal()
-    const cRes = await getConsultations(patientId)
-    consultations.value = cRes.data ?? []
+    const cRes = await getPatientSessions(patientId)
+    consultations.value = cRes.data.items ?? []
   } catch (e) {
     console.error(e)
   } finally {
@@ -334,8 +344,8 @@ async function saveConsultation() {
 async function deleteC(c) {
   if (!confirm(`Delete this consultation from ${formatDate(c.createdAt || c.date)}?`)) return
   try {
-    await deleteConsultation(c.id)
-    const cRes = await getConsultations(patientId)
+    await deleteSession(c.id)
+    const cRes = await getPatientSessions(patientId)
     consultations.value = cRes.data ?? []
   } catch (e) {
     console.error(e)
@@ -484,7 +494,7 @@ async function generateReport(type) {
         <!-- Avatar + Info -->
         <div class="flex items-center gap-5 mt-8 lg:mt-0 lg:ml-10">
           <div class="relative shrink-0">
-            <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-blue-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-primary/30">
+            <div class="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-primary/30">
               {{ initials }}
             </div>
             <div class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-surface"
@@ -516,7 +526,7 @@ async function generateReport(type) {
           <button
             id="btn-add-consultation"
             @click="openAddModal"
-            class="flex items-center gap-2 bg-gradient-to-r from-primary to-blue-500 text-white px-4 py-2.5 rounded-xl font-medium transition-all shadow-lg shadow-primary/40 hover:shadow-primary/60 hover:-translate-y-0.5 ring-1 ring-white/10 text-sm"
+            class="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl font-medium transition-all shadow-lg shadow-primary/40 hover:shadow-primary/60 hover:-translate-y-0.5 ring-1 ring-white/10 text-sm"
           >
             <Plus class="w-4 h-4" />
             Add Consultation
@@ -544,7 +554,7 @@ async function generateReport(type) {
       <div class="relative z-10 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <!-- Avg Stress -->
         <div class="bg-surface/50 backdrop-blur-xl border border-white/10 rounded-2xl p-5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 group">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-blue-500/20 flex items-center justify-center mb-3 group-hover:from-primary group-hover:to-blue-500 transition-all duration-300">
+          <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary transition-all duration-300">
             <Activity class="w-5 h-5 text-primary group-hover:text-white transition-colors duration-300" />
           </div>
           <p class="text-2xl font-bold text-text">{{ avgStress }}</p>
@@ -553,7 +563,7 @@ async function generateReport(type) {
 
         <!-- Avg HR -->
         <div class="bg-surface/50 backdrop-blur-xl border border-white/10 rounded-2xl p-5 hover:border-red-500/40 hover:shadow-lg hover:shadow-red-500/20 transition-all duration-300 group">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500/20 to-pink-500/20 flex items-center justify-center mb-3 group-hover:from-red-500 group-hover:to-pink-500 transition-all duration-300">
+          <div class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center mb-3 group-hover:bg-red-500 transition-all duration-300">
             <Heart class="w-5 h-5 text-red-400 group-hover:text-white transition-colors duration-300" />
           </div>
           <p class="text-2xl font-bold text-text">{{ avgHR }}<span class="text-sm font-normal text-text-muted ml-1">BPM</span></p>
@@ -562,7 +572,7 @@ async function generateReport(type) {
 
         <!-- High Stress Episodes -->
         <div class="bg-surface/50 backdrop-blur-xl border border-white/10 rounded-2xl p-5 hover:border-yellow-500/40 hover:shadow-lg hover:shadow-yellow-500/20 transition-all duration-300 group">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 flex items-center justify-center mb-3 group-hover:from-yellow-500 group-hover:to-orange-500 transition-all duration-300">
+          <div class="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center mb-3 group-hover:bg-yellow-500 transition-all duration-300">
             <AlertTriangle class="w-5 h-5 text-yellow-400 group-hover:text-white transition-colors duration-300" />
           </div>
           <p class="text-2xl font-bold text-text">{{ highStressEpisodes }}</p>
@@ -571,7 +581,7 @@ async function generateReport(type) {
 
         <!-- Total Consultations -->
         <div class="bg-surface/50 backdrop-blur-xl border border-white/10 rounded-2xl p-5 hover:border-green-500/40 hover:shadow-lg hover:shadow-green-500/20 transition-all duration-300 group">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500/20 to-teal-500/20 flex items-center justify-center mb-3 group-hover:from-green-500 group-hover:to-teal-500 transition-all duration-300">
+          <div class="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center mb-3 group-hover:bg-green-500 transition-all duration-300">
             <ClipboardList class="w-5 h-5 text-green-400 group-hover:text-white transition-colors duration-300" />
           </div>
           <p class="text-2xl font-bold text-text">{{ consultations.length }}</p>
@@ -580,7 +590,7 @@ async function generateReport(type) {
 
         <!-- Last Session -->
         <div class="bg-surface/50 backdrop-blur-xl border border-white/10 rounded-2xl p-5 hover:border-purple-500/40 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300 group">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/20 to-indigo-500/20 flex items-center justify-center mb-3 group-hover:from-purple-500 group-hover:to-indigo-500 transition-all duration-300">
+          <div class="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center mb-3 group-hover:bg-purple-500 transition-all duration-300">
             <Calendar class="w-5 h-5 text-purple-400 group-hover:text-white transition-colors duration-300" />
           </div>
           <p class="text-lg font-bold text-text leading-tight">{{ lastSessionDate }}</p>

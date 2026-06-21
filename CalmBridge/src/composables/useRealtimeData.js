@@ -21,12 +21,42 @@ export function useRealtimeData() {
     const realtimeStudents = ref([]);
     onMounted(() => {
 
-        socket.on('connect', () => {
+        socket.on(
+            'telemetryUpdated',
+            (data) => {
+                console.log('realtime update', data)
 
-            console.log(
-                'Connected to server'
-            );
-        });
+                const existingIndex =
+                    realtimeStudents.value.findIndex(
+                        student =>
+                            student.studentId === data.studentId
+                    )
+
+                const updatedStudent = {
+                    studentId: data.studentId,
+                    deviceId: data.braceletId,
+
+                    heartRate: data.heartRate,
+                    hrv: data.hrv,
+                    gsr: data.gsr,
+
+                    stressScore: data.stressScore,
+                    stressLevel: data.stressLevel,
+
+                    connected: true,
+                }
+
+                if (existingIndex !== -1) {
+                    realtimeStudents.value[
+                        existingIndex
+                    ] = updatedStudent
+                } else {
+                    realtimeStudents.value.push(
+                        updatedStudent
+                    )
+                }
+            }
+        )
         console.log('SOCKET EVENT RECEIVED');
 
         // Existing raw sensor stream
@@ -62,25 +92,26 @@ export function useRealtimeData() {
 
                 student =>
                     student.deviceId ===
-                    data.deviceId
+                    data.braceletId
             );
 
-        const updatedStudent = {
+       const updatedStudent = {
+    studentId: data.studentId,
 
-            deviceId:
-                data.deviceId,
+    deviceId: data.braceletId,
 
-            heartRate:
-                Math.round(
-                    data.heartRate
-                ),
+    heartRate: data.heartRate,
 
-            stressLevel:
-                data.stressLevel,
+    hrv: data.hrv,
 
-            connected:
-                data.connected,
-        };
+    gsr: data.gsr,
+
+    stressScore: data.stressScore,
+
+    stressLevel: data.stressLevel,
+
+    connected: true,
+}
 
         // Update existing student
         if (existingIndex !== -1) {
@@ -107,7 +138,7 @@ export function useRealtimeData() {
 
         socket.off('newSensorData');
 
-        socket.off('sensor-update');
+        socket.off('telemetryUpdated');
     });
 
     return {

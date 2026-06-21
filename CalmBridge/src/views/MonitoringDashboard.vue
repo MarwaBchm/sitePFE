@@ -42,8 +42,13 @@ onMounted(async () => {
 
   try {
 
+    const user =
+      JSON.parse(
+        localStorage.getItem('user')
+      )
+
     const res = await fetch(
-      'https://calmebridgeback.onrender.com/students'
+      `http://localhost:3000/appointments/my-patients/${user.userId}`
     )
 
     studentsMonitoring.value =
@@ -64,44 +69,35 @@ onMounted(async () => {
 // ======================================
 
 watch(
-
   realtimeStudents,
-
   (newRealtime) => {
 
-    Object.entries(
-      newRealtime
-    ).forEach(
+    newRealtime.forEach((data) => {
 
-      ([deviceId, data]) => {
+      const student =
+        studentsMonitoring.value.find(
+          s => s.id === data.studentId
+        )
 
-        const student =
-          studentsMonitoring.value.find(
+      if (student) {
 
-            s =>
-              s.deviceId === deviceId
-          )
+        student.heartRate =
+          data.heartRate
 
-        if (student) {
+        student.stressLevel =
+          data.stressLevel
 
-          student.heartRate =
-            data.heartRate
+        student.connected =
+          true
 
-          student.stressLevel =
-            data.stressLevel
+        student.hrv =
+          data.hrv
 
-          student.connected =
-            data.connected
-
-          console.log(
-            'UPDATED STUDENT:',
-            student
-          )
-        }
+        student.gsr =
+          data.gsr
       }
-    )
+    })
   },
-
   { deep: true }
 )
 
@@ -217,7 +213,7 @@ const filteredStudents = computed(() => {
       </div>
       <button 
         @click="showNewSessionModal = true"
-        class="bg-gradient-to-r from-primary to-primary-hover text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-all shadow-lg shadow-primary/40 hover:shadow-primary/60 hover:-translate-y-0.5 ring-1 ring-white/10"
+        class="bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-all shadow-lg shadow-primary/40 hover:shadow-primary/60 hover:-translate-y-0.5 ring-1 ring-white/10"
       >
         <Plus class="w-5 h-5" />
         Start Monitoring Session
@@ -322,7 +318,7 @@ const filteredStudents = computed(() => {
             </td>
             <td class="px-6 py-4 text-right">
         <button
-          @click="router.push(`/Consultation/${student.id}`)"
+          @click="router.push(`/consultation/${student.id}`)"
           class="bg-primary/10 text-primary hover:bg-primary/20 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 transition-colors ml-auto"
         >
           <Activity class="w-4 h-4" />
@@ -395,7 +391,7 @@ const filteredStudents = computed(() => {
           </button>
           <button 
             @click="startMonitoring"
-            class="bg-gradient-to-r from-primary to-primary-hover text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-lg shadow-primary/40 hover:shadow-primary/60 hover:-translate-y-0.5 ring-1 ring-white/10"
+            class="bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-lg shadow-primary/40 hover:shadow-primary/60 hover:-translate-y-0.5 ring-1 ring-white/10"
             :disabled="!selectedExamRoom"
             :class="{'opacity-50 cursor-not-allowed': !selectedExamRoom}"
           >

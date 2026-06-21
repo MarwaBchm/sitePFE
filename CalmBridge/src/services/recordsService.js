@@ -1,40 +1,30 @@
 import axios from 'axios'
 
-const PATIENT_API = 'http://localhost:3000/students'
-const API_BASE = 'http://localhost:8080/api'
+const api = axios.create({
+  baseURL: 'http://localhost:3000',
+})
 
-/**
- * Fetch a single patient by ID
- */
-export const getPatientById = (id) =>
-  axios.get(`${PATIENT_API}/${id}`)
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('token')
 
-/**
- * Fetch all consultations for a patient
- */
-export const getConsultations = (patientId) =>
-  axios.get(`${API_BASE}/consultations/patient/${patientId}`)
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
 
-/**
- * Create a new consultation
- */
-export const createConsultation = (data) =>
-  axios.post(`${API_BASE}/consultations`, data)
+  return config
+})
 
-/**
- * Update an existing consultation
- */
-export const updateConsultation = (id, data) =>
-  axios.put(`${API_BASE}/consultations/${id}`, data)
+export const getPatientById = id =>
+  api.get(`/students/${id}`)
 
-/**
- * Delete a consultation
- */
-export const deleteConsultation = (id) =>
-  axios.delete(`${API_BASE}/consultations/${id}`)
+export const getPatientSessions = patientId =>
+  api.get(`/appointments/patient/${patientId}`)
 
-/**
- * Fetch monitoring sessions for a patient
- */
-export const getMonitoringSessions = (patientId) =>
-  axios.get(`${API_BASE}/monitoring/patient/${patientId}/sessions`)
+export const createSession = data =>
+  api.post(`/appointments/session`, data)
+
+export const updateSession = (id, data) =>
+  api.patch(`/appointments/session/${id}`, data)
+
+export const deleteSession = id =>
+  api.delete(`/appointments/session/${id}`)

@@ -1,17 +1,36 @@
-import { ref } from 'vue'
-import { Search, Plus, FolderOpen, ChevronRight, X, Edit, Trash2 } from 'lucide-vue-next'
-import { useRouter } from 'vue-router'
 import axios from 'axios'
 
-const API_URL = 'http://localhost:3000/students'
+const STUDENTS_API = 'http://localhost:3000/students'
+const APPOINTMENTS_API = 'http://localhost:3000/appointments'
 
-export const getStudents = () => axios.get(API_URL)
+const getAuthConfig = () => ({
+    headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+    }
+})
+
+export const getMyPatients = (userId) =>
+    axios.get(
+        `${APPOINTMENTS_API}/my-patients/${userId}`,
+        getAuthConfig()
+    )
 
 export const createStudent = (data) =>
-    axios.post(API_URL, data)
+    axios.post(
+        STUDENTS_API,
+        data,
+        getAuthConfig()
+    )
 
 export const updateStudent = (id, data) =>
-    axios.put(`${API_URL}/${id}`, data)
+    axios.patch(
+        `${STUDENTS_API}/${id}`,
+        data,
+        getAuthConfig()
+    )
 
 export const deleteStudent = (id) =>
-    axios.delete(`${API_URL}/${id}`)
+    axios.delete(
+        `${STUDENTS_API}/${id}`,
+        getAuthConfig()
+    )

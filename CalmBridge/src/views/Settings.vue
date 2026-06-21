@@ -1,12 +1,51 @@
 <script setup>
-import { ref } from "vue"
+
+import { onMounted, onUnmounted, ref } from 'vue'
+import axios from 'axios'
 
 const user = ref({
-  firstName: "John",
-  lastName: "Doe",
-  email: "john.doe@example.com",
-  role: "Associate Professor",
-  recruitmentDate: "2020-08-15"
+  firstName: 'John',
+  lastName: 'Smith',
+  email: 'dr.smith@clinic.com',
+  role: 'Therapist',
+  recruitmentDate: '2024-01-15',
+})
+const isLight = ref(false)
+
+const syncTheme = () => {
+  isLight.value = document.documentElement.classList.contains('light')
+}
+
+const toggleThemeSetting = () => {
+  if (document.documentElement.classList.contains('light')) {
+    document.documentElement.classList.remove('light')
+    localStorage.setItem('theme', 'dark')
+  } else {
+    document.documentElement.classList.add('light')
+    localStorage.setItem('theme', 'light')
+  }
+  isLight.value = !isLight.value
+  window.dispatchEvent(new CustomEvent('theme-changed', { detail: isLight.value ? 'light' : 'dark' }))
+}
+
+onMounted(async () => {
+  syncTheme()
+  window.addEventListener('theme-changed', syncTheme)
+
+  try {
+    const res = await axios.get(
+      'http://localhost:3000/auth/profile'
+    )
+    if (res.data) {
+      user.value = res.data
+    }
+  } catch (err) {
+    console.warn('Backend profile API not available, using mock user profile.', err)
+  }
+})
+
+onUnmounted(() => {
+  window.removeEventListener('theme-changed', syncTheme)
 })
 </script>
 
@@ -42,7 +81,7 @@ const user = ref({
         </div>
 
         <div class="flex gap-3">
-          <button class="bg-gradient-to-r from-primary to-primary-hover text-white px-4 py-2 rounded-lg transition-all shadow-lg shadow-primary/40 hover:shadow-primary/60 hover:-translate-y-0.5 ring-1 ring-white/10">
+          <button class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg transition-all shadow-lg shadow-primary/40 hover:shadow-primary/60 hover:-translate-y-0.5 ring-1 ring-white/10">
             Save Changes
           </button>
           <button class="bg-red-500/10 text-red-500 hover:bg-red-500/20 px-4 py-2 rounded-lg transition-colors">
@@ -94,6 +133,24 @@ const user = ref({
                   class="w-full border-b border-border bg-transparent text-text outline-none py-1 focus:border-primary transition-colors"
                 />
                 <span class="cursor-pointer">👁️</span>
+              </div>
+            </div>
+
+            <div class="pt-4 border-t border-border">
+              <label class="text-sm text-text-muted mb-2 block font-medium">Theme Preferences</label>
+              <div class="flex items-center justify-between bg-surface-hover/30 border border-border rounded-xl p-3 transition-colors">
+                <span class="text-sm text-text">Use Light Mode Theme</span>
+                <button 
+                  type="button" 
+                  @click="toggleThemeSetting"
+                  class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                  :class="isLight ? 'bg-primary' : 'bg-border'"
+                >
+                  <span
+                    class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                    :class="isLight ? 'translate-x-5' : 'translate-x-0'"
+                  ></span>
+                </button>
               </div>
             </div>
 

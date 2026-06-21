@@ -4,7 +4,7 @@ import { Search, Plus, FolderOpen, ChevronRight, X, Edit, Trash2 } from 'lucide-
 import { useRouter } from 'vue-router'
 import { onMounted, computed } from 'vue'
 import {
-  getStudents,
+  getMyPatients,
   createStudent,
   updateStudent,
   deleteStudent
@@ -15,8 +15,16 @@ const router = useRouter()
 
 const fetchPatients = async () => {
   try {
-    const response = await getStudents()
-    patients.value = response.data
+    const user = JSON.parse(
+      localStorage.getItem('user')
+    )
+
+    const response = await getMyPatients(user.userId)
+
+console.log('USER', user)
+console.log('PATIENTS RESPONSE', response.data)
+
+patients.value = response.data
   } catch (error) {
     console.error(error)
   }
@@ -142,6 +150,12 @@ const resetForm = () => {
     diagnosis: ''
   }
 }
+const formatDate = (date) => {
+  if (!date) return 'No sessions'
+
+  return new Date(date)
+    .toLocaleDateString()
+}
 </script>
 
 <template>
@@ -153,7 +167,7 @@ const resetForm = () => {
       </div>
       <button 
         @click="showAddPatientModal = true"
-        class="bg-gradient-to-r from-blue-900 via-blue-600  to-blue-700 text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-all shadow-lg shadow-primary/40 hover:shadow-primary/60 hover:-translate-y-0.5 ring-1 ring-white/10 hover:bg-primary"
+        class="bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-all shadow-lg shadow-primary/40 hover:shadow-primary/60 hover:-translate-y-0.5 ring-1 ring-white/10"
       >
         <Plus class="w-5 h-5" />
         New Patient
@@ -195,6 +209,9 @@ const resetForm = () => {
                 <div>
                   <p class="font-medium text-text">{{ patient.firstName }} {{ patient.lastName }}</p>
                   <p class="text-sm text-text-muted">{{ patient.age }} yrs</p>
+                  <p class="text-sm text-text-muted">
+  {{ patient.totalSessions }} sessions
+</p>
                 </div>
               </div>
             </td>
@@ -204,7 +221,7 @@ const resetForm = () => {
               </span>
             </td>
             <td class="px-6 py-4 text-text-muted">
-              {{ patient.lastSession }}
+              {{ formatDate(patient.lastSession) }}
             </td>
             <td class="px-6 py-4 text-right">
               <div class="flex items-center justify-end gap-3 transition-opacity">
@@ -296,7 +313,7 @@ const resetForm = () => {
           </button>
           <button 
             @click="savePatient"
-            class="bg-gradient-to-r from-primary to-primary-hover text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-lg shadow-primary/40 hover:shadow-primary/60 hover:-translate-y-0.5 ring-1 ring-white/10"
+            class="bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-lg shadow-primary/40 hover:shadow-primary/60 hover:-translate-y-0.5 ring-1 ring-white/10"
             :disabled="
 !newPatient.firstName ||
 !newPatient.lastName ||
