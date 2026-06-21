@@ -45,19 +45,23 @@ const chartData = {
 <template>
   <div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
     <div>
-      <h1 class="text-3xl font-bold tracking-tight text-white">Overview</h1>
+      <h1 class="text-3xl font-bold tracking-tight text-text">Overview</h1>
       <p class="text-text-muted mt-2">Welcome back, Dr. Smith. Here's what's happening today.</p>
     </div>
 
     <!-- Stats Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <div 
-        v-for="stat in stats" 
+        v-for="(stat, index) in stats" 
         :key="stat.name"
-        class="bg-surface rounded-2xl p-6 border border-border hover:border-primary/50 transition-colors duration-300 group"
+        class="bg-surface/50 backdrop-blur-xl rounded-2xl p-6 border border-white/10 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 group animate-wave-glow"
+        :style="{ animationDelay: `${index * 0.3}s` }"
       >
         <div class="flex items-center justify-between">
-          <div class="p-3 rounded-xl bg-primary/10 text-primary group-hover:scale-110 transition-transform duration-300">
+          <div 
+            class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all duration-300 shadow-inner animate-icon-glow"
+            :style="{ animationDelay: `${index * 0.3}s` }"
+          >
             <component :is="stat.icon" class="w-6 h-6" />
           </div>
           <span 
@@ -69,7 +73,7 @@ const chartData = {
         </div>
         <div class="mt-6">
           <p class="text-text-muted text-sm font-medium">{{ stat.name }}</p>
-          <p class="text-3xl font-bold text-white mt-1">{{ stat.value }}</p>
+          <p class="text-3xl font-bold text-text mt-1">{{ stat.value }}</p>
         </div>
       </div>
     </div>
@@ -77,9 +81,9 @@ const chartData = {
     <!-- Main Content Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Chart -->
-      <div class="bg-surface rounded-2xl border border-border overflow-hidden lg:col-span-2 flex flex-col">
+      <div class="bg-surface rounded-2xl border border-border overflow-hidden lg:col-span-2 flex flex-col shadow-lg shadow-black/20 hover:border-primary/30 transition-colors duration-300">
         <div class="px-6 py-5 border-b border-border flex justify-between items-center">
-          <h2 class="text-xl font-semibold text-white">Consultation Activity</h2>
+          <h2 class="text-xl font-semibold text-text">Consultation Activity</h2>
         </div>
         <div class="p-6 flex-1 min-h-[300px]">
           <Line :data="chartData" :options="chartOptions" />
@@ -87,9 +91,9 @@ const chartData = {
       </div>
 
       <!-- Recent Activity -->
-      <div class="bg-surface rounded-2xl border border-border overflow-hidden">
+      <div class="bg-surface rounded-2xl border border-border overflow-hidden shadow-lg shadow-black/20 hover:border-primary/30 transition-colors duration-300">
         <div class="px-6 py-5 border-b border-border">
-          <h2 class="text-xl font-semibold text-white">Recent Activity</h2>
+          <h2 class="text-xl font-semibold text-text">Recent Activity</h2>
         </div>
         <div class="divide-y divide-border">
           <div 
@@ -106,7 +110,7 @@ const chartData = {
               }"
             ></div>
             <div>
-              <p class="font-medium text-white">{{ activity.patient }}</p>
+              <p class="font-medium text-text">{{ activity.patient }}</p>
               <p class="text-sm text-text-muted mt-0.5">{{ activity.action }}</p>
               <p class="text-xs text-text-muted mt-2">{{ activity.time }}</p>
             </div>
@@ -116,3 +120,35 @@ const chartData = {
     </div>
   </div>
 </template>
+
+<style scoped>
+@keyframes waveGlow {
+  0%, 100% {
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+  }
+  15%, 25% {
+    border-color: color-mix(in srgb, var(--color-primary) 60%, transparent);
+    box-shadow: 0 0 30px -5px color-mix(in srgb, var(--color-primary) 30%, transparent);
+  }
+}
+
+.animate-wave-glow {
+  animation: waveGlow 4s infinite;
+}
+
+@keyframes iconGlow {
+  0%, 100% {
+    background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    color: var(--color-primary);
+  }
+  15%, 25% {
+    background-color: var(--color-primary);
+    color: white;
+  }
+}
+
+.animate-icon-glow {
+  animation: iconGlow 4s infinite;
+}
+</style>
