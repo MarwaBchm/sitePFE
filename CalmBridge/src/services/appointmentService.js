@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-const API_BASE = 'http://localhost:3000/appointments'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_BASE = `${API_URL}/appointments`
 
 export const getAppointments = async () => {
   const res = await axios.get(API_BASE)

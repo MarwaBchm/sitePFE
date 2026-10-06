@@ -55,8 +55,9 @@ onMounted(async () => {
  console.log(route.params.id)
   try {
    
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
     const res = await fetch(
-      `http://localhost:3000/students/${route.params.id}`,  {
+      `${API_URL}/students/${route.params.id}`,  {
     headers: {
       Authorization: `Bearer ${token}`
     }

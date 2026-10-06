@@ -1,11 +1,18 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Bell, Sun, Moon, User, Clock, Calendar } from 'lucide-vue-next'
+import { Bell, Sun, Moon, User, Clock, Calendar, Menu } from 'lucide-vue-next'
 import { useAppointmentsShared } from '../composables/useAppointments'
+import { useLayout } from '../composables/useLayout'
 
 const router = useRouter()
 const { pendingAppointments, pendingCount, fetchAppointments } = useAppointmentsShared()
+const { toggleSidebar } = useLayout()
+
+const user = ref(JSON.parse(localStorage.getItem('user')) || { firstName: 'User', lastName: '', role: 'Therapist' })
+const userInitials = computed(() => {
+  return `${user.value.firstName?.[0] || ''}${user.value.lastName?.[0] || ''}`.toUpperCase()
+})
 
 const isLight = ref(false)
 const showNotifications = ref(false)
@@ -67,8 +74,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <header class="h-20 bg-surface/50 backdrop-blur-xl border-b border-border px-8 flex items-center justify-between z-40 relative">
-    <div>
+  <header class="h-20 bg-surface/50 backdrop-blur-xl border-b border-border px-4 md:px-8 flex items-center justify-between z-40 relative">
+    <div class="flex items-center gap-3">
+      <button @click="toggleSidebar" class="md:hidden p-2 rounded-xl text-text-muted hover:bg-surface-hover hover:text-text transition-colors cursor-pointer">
+        <Menu class="w-6 h-6" />
+      </button>
       <h2 class="text-lg font-bold text-text hidden sm:block">CalmBridge Portal</h2>
     </div>
 
@@ -158,11 +168,11 @@ onUnmounted(() => {
       <!-- Profile avatar mock -->
       <div class="flex items-center gap-3 border-l border-border pl-6">
         <div class="w-9 h-9 rounded-xl overflow-hidden bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-          DS
+          {{ userInitials }}
         </div>
         <div class="hidden md:block">
-          <p class="text-xs font-bold text-text leading-tight">Dr. Smith</p>
-          <p class="text-[10px] text-text-muted">Therapist</p>
+          <p class="text-xs font-bold text-text leading-tight">{{ user.firstName }} {{ user.lastName }}</p>
+          <p class="text-[10px] text-text-muted capitalize">{{ user.role?.toLowerCase() || 'Therapist' }}</p>
         </div>
       </div>
     </div>

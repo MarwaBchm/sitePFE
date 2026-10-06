@@ -1,7 +1,8 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Activity, Eye, EyeOff } from 'lucide-vue-next'
+import { Activity, Eye, EyeOff, Loader2 } from 'lucide-vue-next'
+import { getFriendlyErrorMessage } from '../utils/errorHandler'
 
 const router = useRouter()
 const showPassword = ref(false)
@@ -19,8 +20,9 @@ const handleLogin = async () => {
     loading.value = true
     error.value = ''
 
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
     const response = await fetch(
-      'http://localhost:3000/auth/login',
+      `${API_URL}/auth/login`,
       {
         method: 'POST',
 
@@ -61,7 +63,7 @@ const handleLogin = async () => {
 
   } catch (err) {
 
-    error.value = err.message
+    error.value = getFriendlyErrorMessage(err)
 
   } finally {
 
@@ -76,12 +78,12 @@ const handleLogin = async () => {
     <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[120px] pointer-events-none"></div>
     <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/20 blur-[120px] pointer-events-none"></div>
 
-    <div class="w-full max-w-md p-8 bg-surface/80 backdrop-blur-xl border border-border rounded-3xl shadow-2xl relative z-10 animate-in zoom-in-95 duration-500">
+    <div class="w-full max-w-md p-8 bg-surface/80  rounded-3xl shadow-2xl relative z-10 animate-in zoom-in-95 duration-500">
       <div class="flex flex-col items-center mb-8">
-        <div class="w-16 h-16 rounded-2xl overflow-hidden shadow-lg shadow-primary/30 mb-4">
-          <img src='/logo.png' class="w-full h-full object-cover" />
+        <div class="w-22 h-22  overflow-hidden mb-4 items-center justify-center p-2 ">
+          <img src='/logo.png' class="w-full h-full object-contain" />
         </div>
-        <h1 class="text-3xl font-bold text-white drop-shadow-sm">CalmBridge</h1>
+        <h1 class="text-3xl font-bold text-text drop-shadow-sm font-sans tracking-tight">CalmBridge</h1>
         <p class="text-text-muted mt-2 text-center">Sign in to your therapist dashboard to manage patients and VR sessions.</p>
       </div>
 
@@ -118,19 +120,24 @@ const handleLogin = async () => {
                 <Eye v-if="showPassword" class="w-5 h-5" />
                 <EyeOff v-else class="w-5 h-5" />
               </button>
-              <p v-if="error"
-                class="text-red-400 text-sm text-center"
-              >
-                {{ error }}
-              </p>
             </div>
           </div>
+          <p v-if="error" class="text-red-400 text-sm text-center font-medium bg-red-500/10 py-2 rounded-xl">
+            {{ error }}
+          </p>
           <button 
             type="submit"
             :disabled="loading"
-            class="w-full bg-primary hover:bg-primary-hover text-white font-medium py-2.5 rounded-xl transition-all shadow-lg shadow-primary/40 hover:shadow-primary/60 hover:-translate-y-0.5 ring-1 ring-white/10"
+            class="w-full bg-primary hover:bg-primary-hover text-white font-medium py-2.5 rounded-xl transition-all shadow-lg shadow-primary/40 hover:shadow-primary/60 hover:-translate-y-0.5 ring-1 ring-white/10 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            Sign In
+            <template v-if="loading">
+              <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>Signing in...</span>
+            </template>
+            <span v-else>Sign In</span>
           </button>
         </form>
       </div>

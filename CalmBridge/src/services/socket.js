@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 
-const socket = io('https://baack-1.onrender.com/', {
+const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3000', {
   transports: ['websocket'],
 });
 
