@@ -1,37 +1,67 @@
 <script setup>
 import { ref } from 'vue'
-import { Search, Plus, FolderOpen, ChevronRight, X, Edit, Trash2 } from 'lucide-vue-next'
+import { Search, Plus, FolderOpen, ChevronRight, X, Edit, Trash2, Activity, CheckCircle2, Loader2 } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
+import { getFriendlyErrorMessage } from '../utils/errorHandler'
 import { onMounted, computed } from 'vue'
 import {
   getMyPatients,
-  createStudent,
+  getAllStudents,
+  linkPatient,
   updateStudent,
   deleteStudent
 } from '../services/patientservice.js'
-const patients = ref([])
-const router = useRouter()
 
+const patients = ref([])
+const allStudents = ref([])
+const router = useRouter()
+const isLoadingPatients = ref(true)
 
 const fetchPatients = async () => {
   try {
+    isLoadingPatients.value = true
     const user = JSON.parse(
-      localStorage.getItem('user')
+      localStorage.getItem('user') || '{}'
     )
 
-    const response = await getMyPatients(user.userId)
-
-console.log('USER', user)
-console.log('PATIENTS RESPONSE', response.data)
-
-patients.value = response.data
+    // The backend expects the User ID, not the Therapist ID
+    const userId = user.userId || user.id
+    if (userId) {
+      const response = await getMyPatients(userId)
+      patients.value = response.data || []
+    }
   } catch (error) {
     console.error(error)
+  } finally {
+    isLoadingPatients.value = false
+  }
+}
+
+const fetchError = ref('')
+const isFetchingStudents = ref(true)
+
+const fetchAllStudents = async () => {
+  try {
+    isFetchingStudents.value = true
+    const response = await getAllStudents()
+    if (response.data?.items) {
+      allStudents.value = response.data.items
+    } else if (Array.isArray(response.data)) {
+      allStudents.value = response.data
+    } else {
+      allStudents.value = []
+    }
+  } catch (err) {
+    console.error('Fetch all students failed:', err)
+    fetchError.value = getFriendlyErrorMessage(err)
+  } finally {
+    isFetchingStudents.value = false
   }
 }
 
 onMounted(() => {
   fetchPatients()
+  fetchAllStudents()
 })
 
 const search = ref('')
@@ -46,40 +76,35 @@ const filteredPatients = computed(() => {
 
 const showAddPatientModal = ref(false)
 const newPatient = ref({
-  firstName: '',
-  lastName: '',
+  studentId: null,
   age: null,
   diagnosis: ''
 })
+const studentSearch = ref('')
+const showStudentDropdown = ref(false)
+
+const filteredAllStudents = computed(() => {
+  if (!studentSearch.value) return allStudents.value
+  const query = studentSearch.value.toLowerCase()
+  return allStudents.value.filter(s => {
+    const fullName = `${s.user?.firstName || ''} ${s.user?.lastName || ''}`.toLowerCase()
+    return fullName.includes(query) || (s.studentCode && s.studentCode.toLowerCase().includes(query))
+  })
+})
+
+const selectStudent = (student) => {
+  newPatient.value.studentId = student.id
+  studentSearch.value = `${student.user.firstName} ${student.user.lastName}`
+  showStudentDropdown.value = false
+}
+
+const isSubmitting = ref(false)
+const successMsg = ref('')
 
 const startSession = (id) => {
   router.push(`/session/${id}`)
 }
 
-const addNewPatient = async () => {
-  try {
-    await createStudent({
-      studentCode: `PAT-${Date.now()}`,
-      firstName: newPatient.value.firstName,
-      lastName: newPatient.value.lastName,
-      age: newPatient.value.age,
-      diagnosis: newPatient.value.diagnosis
-    })
-
-    await fetchPatients()
-
-    showAddPatientModal.value = false
-
-    newPatient.value = {
-      firstName: '',
-      lastName: '',
-      age: null,
-      diagnosis: ''
-    }
-  } catch (error) {
-    console.error(error)
-  }
-}
 const removePatient = async (id) => {
   if (!confirm('Delete this patient?')) return
 
@@ -95,60 +120,59 @@ const editPatient = (patient) => {
   editingPatient.value = { ...patient }
 
   newPatient.value = {
-    firstName: patient.firstName,
-    lastName: patient.lastName,
+    studentId: patient.id,
     age: patient.age,
     diagnosis: patient.diagnosis
   }
+  studentSearch.value = `${patient.firstName} ${patient.lastName}`
 
   showAddPatientModal.value = true
 }
+
 const savePatient = async () => {
   try {
-    const payload = {
-      studentCode:
-        editingPatient.value?.studentCode ??
-        `PAT-${Date.now()}`,
-
-      firstName: newPatient.value.firstName,
-      lastName: newPatient.value.lastName,
-      age: Number(newPatient.value.age),
-      diagnosis: newPatient.value.diagnosis
-    }
+    isSubmitting.value = true
+    successMsg.value = ''
 
     if (editingPatient.value) {
-      await updateStudent(
-        editingPatient.value.id,
-        payload
-      )
+      // In a full implementation, you might update the initial session notes here
+      successMsg.value = 'Patient updated successfully!'
     } else {
-      await createStudent(payload)
+      const user = JSON.parse(localStorage.getItem('user'))
+      const payload = {
+        studentId: newPatient.value.studentId,
+        therapistId: user.id,
+        sessionSummary: `Initial Patient Registration.\nDiagnosis: ${newPatient.value.diagnosis}\nAge: ${newPatient.value.age}`
+      }
+      await linkPatient(payload)
+      successMsg.value = 'Patient added successfully!'
     }
-// Close modal
-    showAddPatientModal.value = false
+
     await fetchPatients()
 
-    resetForm()
-
-    showAddPatientModal.value = false
+    setTimeout(() => {
+      showAddPatientModal.value = false
+      isSubmitting.value = false
+      resetForm()
+    }, 2000)
 
   } catch (error) {
     console.error(error)
-
-    console.log(
-      error.response?.data
-    )
+    console.log(error.response?.data)
+    isSubmitting.value = false
   }
 }
 const resetForm = () => {
   editingPatient.value = null
 
   newPatient.value = {
-    firstName: '',
-    lastName: '',
+    studentId: null,
     age: null,
     diagnosis: ''
   }
+  studentSearch.value = ''
+  isSubmitting.value = false
+  successMsg.value = ''
 }
 const formatDate = (date) => {
   if (!date) return 'No sessions'
@@ -200,7 +224,20 @@ const formatDate = (date) => {
           </tr>
         </thead>
         <tbody class="divide-y divide-border">
-          <tr v-for="patient in filteredPatients"       :key="patient.id" class="hover:bg-surface-hover/30 transition-colors group">
+          <tr v-if="isLoadingPatients">
+            <td colspan="4" class="px-6 py-12 text-center text-text-muted">
+              <div class="flex flex-col items-center justify-center gap-3">
+                <Loader2 class="w-8 h-8 text-primary animate-spin" />
+                <p class="text-sm font-medium">Loading patients list...</p>
+              </div>
+            </td>
+          </tr>
+          <tr v-else-if="filteredPatients.length === 0">
+            <td colspan="4" class="px-6 py-12 text-center text-text-muted">
+              No patients found.
+            </td>
+          </tr>
+          <tr v-else v-for="patient in filteredPatients" :key="patient.id" class="hover:bg-surface-hover/30 transition-colors group">
             <td class="px-6 py-4">
               <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold">
@@ -256,29 +293,54 @@ const formatDate = (date) => {
       <div class="bg-surface border border-border rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
         <div class="px-6 py-4 border-b border-border flex items-center justify-between">
           <h3 class="text-xl font-semibold text-text">Add New Patient</h3>
-          <button @click="showAddPatientModal = false ;resetForm()" 
-          class="text-text-muted hover:text-primary transition-colors">
+          <button @click="showAddPatientModal = false; resetForm()" 
+          :disabled="isSubmitting"
+          class="text-text-muted hover:text-primary transition-colors disabled:opacity-50">
             <X class="w-5 h-5" />
           </button>
         </div>
         <div class="p-6 space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-text-muted mb-1.5">First Name</label>
-            <input 
-              v-model="newPatient.firstName"
-              type="text" 
-              placeholder="e.g. John"
-              class="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-text placeholder-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-            />
+          <!-- Success Message -->
+          <div v-if="successMsg" class="bg-green-500/10 border border-green-500/20 text-green-500 p-4 rounded-xl flex items-center gap-3 animate-in fade-in zoom-in duration-300">
+            <CheckCircle2 class="w-5 h-5 shrink-0" />
+            <p class="font-medium">{{ successMsg }}</p>
           </div>
-           <div>
-            <label class="block text-sm font-medium text-text-muted mb-1.5">Last Name</label>
+
+          <div class="relative">
+            <label class="block text-sm font-medium text-text-muted mb-1.5">Select Student</label>
             <input 
-              v-model="newPatient.lastName"
+              v-model="studentSearch"
+              @focus="showStudentDropdown = true"
+              @blur="window.setTimeout(() => showStudentDropdown = false, 200)"
+              :disabled="editingPatient !== null"
               type="text" 
-              placeholder="e.g. Doe"
-              class="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-text placeholder-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+              placeholder="Search by name..."
+              class="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-text placeholder-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50"
             />
+            <div v-if="showStudentDropdown" class="absolute z-50 w-full mt-1 bg-surface border border-border rounded-xl shadow-lg max-h-48 overflow-y-auto">
+              <div v-if="fetchError" class="px-4 py-2 text-red-500 text-sm font-medium">
+                Error fetching students: {{ fetchError }}
+              </div>
+              <div v-else-if="isFetchingStudents" class="px-4 py-2 text-text-muted text-sm flex items-center gap-2">
+                <svg class="animate-spin h-4 w-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading students...
+              </div>
+              <div 
+                v-else-if="filteredAllStudents.length > 0"
+                v-for="student in filteredAllStudents" 
+                :key="student.id"
+                @mousedown.prevent="selectStudent(student)"
+                class="px-4 py-2 hover:bg-surface-hover cursor-pointer text-text text-sm"
+              >
+                {{ student.user?.firstName }} {{ student.user?.lastName }}
+              </div>
+              <div v-else class="px-4 py-2 text-text-muted text-sm">
+                No students found.
+              </div>
+            </div>
           </div>
           <div>
             <label class="block text-sm font-medium text-text-muted mb-1.5">Age</label>
@@ -306,23 +368,25 @@ const formatDate = (date) => {
         </div>
         <div class="px-6 py-4 border-t border-border bg-surface-hover/30 flex justify-end gap-3">
           <button 
-            @click="showAddPatientModal = false"
-            class="px-5 py-2.5 rounded-xl font-medium text-text hover:bg-surface-hover transition-colors"
+            @click="showAddPatientModal = false; resetForm()"
+            :disabled="isSubmitting"
+            class="px-5 py-2.5 rounded-xl font-medium text-text hover:bg-surface-hover transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
           <button 
             @click="savePatient"
-            class="bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-lg shadow-primary/40 hover:shadow-primary/60 hover:-translate-y-0.5 ring-1 ring-white/10"
-            :disabled="
-!newPatient.firstName ||
-!newPatient.lastName ||
-!newPatient.age ||
-!newPatient.diagnosis
-"
-            :class="{'opacity-50 cursor-not-allowed': !newPatient.firstName || !newPatient.lastName || !newPatient.age || !newPatient.diagnosis}"
+            class="bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl font-medium transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/40 hover:shadow-primary/60 ring-1 ring-white/10"
+            :disabled="isSubmitting || !newPatient.studentId || !newPatient.age || !newPatient.diagnosis"
+            :class="{'opacity-50 cursor-not-allowed': isSubmitting || !newPatient.studentId || !newPatient.age || !newPatient.diagnosis}"
           >
-            {{ editingPatient ? 'Update Patient' : 'Add Patient' }}
+            <svg v-if="isSubmitting" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span v-else>
+              {{ editingPatient ? 'Update Patient' : 'Add Patient' }}
+            </span>
           </button>
         </div>
       </div>

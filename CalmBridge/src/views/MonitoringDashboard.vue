@@ -47,8 +47,9 @@ onMounted(async () => {
         localStorage.getItem('user')
       )
 
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
     const res = await fetch(
-      `http://localhost:3000/appointments/my-patients/${user.userId}`
+      `${API_URL}/appointments/my-patients/${user.id}`
     )
 
     studentsMonitoring.value =

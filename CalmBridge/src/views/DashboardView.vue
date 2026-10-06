@@ -1,22 +1,41 @@
 <script setup>
-import { Users, Activity, Clock, TrendingUp } from 'lucide-vue-next'
+import { ref, onMounted } from 'vue'
+import { Users, Activity, Clock, TrendingUp, Loader2 } from 'lucide-vue-next'
 import { Line } from 'vue-chartjs'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js'
+import { getMyPatients } from '../services/patientservice.js'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
 
-const stats = [
-  { name: 'Total Patients', value: '124', icon: Users, change: '+12%', changeType: 'positive' },
-  { name: 'Active Sessions', value: '12', icon: Activity, change: '+4%', changeType: 'positive' },
-  { name: 'Avg. Session Time', value: '45m', icon: Clock, change: '-2%', changeType: 'negative' },
-  { name: 'Success Rate', value: '94%', icon: TrendingUp, change: '+1%', changeType: 'positive' },
-]
+const user = JSON.parse(localStorage.getItem('user')) || { firstName: 'User', lastName: '' }
+const isLoadingStats = ref(true)
 
-const recentActivity = [
-  { id: 1, patient: 'Sarah Jenkins', action: 'Completed VR Exposure Therapy', time: '2 hours ago', status: 'success' },
-  { id: 2, patient: 'Michael Chen', action: 'Scheduled new consultation', time: '4 hours ago', status: 'pending' },
-  { id: 3, patient: 'Emma Thompson', action: 'High anxiety detected during session', time: '5 hours ago', status: 'warning' },
-]
+const stats = ref([
+  { name: 'Total Patients', value: '0', icon: Users, change: '+12%', changeType: 'positive' },
+  { name: 'Active Sessions', value: '0', icon: Activity, change: '+5%', changeType: 'positive' },
+  { name: 'Avg. Session Time', value: '24m', icon: Clock, change: '+2m', changeType: 'positive' },
+  { name: 'Success Rate', value: '94%', icon: TrendingUp, change: '+3%', changeType: 'positive' },
+])
+
+const recentActivity = ref([])
+
+onMounted(async () => {
+  try {
+    isLoadingStats.value = true
+    const userId = user.userId || user.id
+    if (userId) {
+      const res = await getMyPatients(userId)
+      const patientList = res.data || []
+      stats.value[0].value = String(patientList.length)
+      const totalSess = patientList.reduce((acc, p) => acc + (p.totalSessions || 0), 0)
+      stats.value[1].value = String(totalSess)
+    }
+  } catch (err) {
+    console.warn('Could not fetch dashboard stats', err)
+  } finally {
+    isLoadingStats.value = false
+  }
+})
 
 const chartOptions = {
   responsive: true,
@@ -46,7 +65,7 @@ const chartData = {
   <div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
     <div>
       <h1 class="text-3xl font-bold tracking-tight text-text">Overview</h1>
-      <p class="text-text-muted mt-2">Welcome back, Dr. Smith. Here's what's happening today.</p>
+      <p class="text-text-muted mt-2">Welcome back, {{ user.firstName }} {{ user.lastName }}. Here's what's happening today.</p>
     </div>
 
     <!-- Stats Grid -->
@@ -73,7 +92,11 @@ const chartData = {
         </div>
         <div class="mt-6">
           <p class="text-text-muted text-sm font-medium">{{ stat.name }}</p>
-          <p class="text-3xl font-bold text-text mt-1">{{ stat.value }}</p>
+          <div v-if="isLoadingStats" class="mt-2 flex items-center gap-2 text-primary">
+            <Loader2 class="w-5 h-5 animate-spin" />
+            <span class="text-xs text-text-muted">Loading...</span>
+          </div>
+          <p v-else class="text-3xl font-bold text-text mt-1">{{ stat.value }}</p>
         </div>
       </div>
     </div>
@@ -96,6 +119,9 @@ const chartData = {
           <h2 class="text-xl font-semibold text-text">Recent Activity</h2>
         </div>
         <div class="divide-y divide-border">
+          <div v-if="recentActivity.length === 0" class="p-6 text-center text-text-muted text-sm">
+            No recent activity to display.
+          </div>
           <div 
             v-for="activity in recentActivity" 
             :key="activity.id"

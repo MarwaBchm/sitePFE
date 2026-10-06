@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { getFriendlyErrorMessage } from '../utils/errorHandler'
 import { Line } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -283,7 +284,7 @@ async function fetchAll() {
 
   } catch (e) {
     console.error(e)
-    error.value = e
+    error.value = getFriendlyErrorMessage(e)
   } finally {
     loading.value = false
   }

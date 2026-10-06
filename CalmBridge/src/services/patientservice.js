@@ -1,7 +1,8 @@
 import axios from 'axios'
 
-const STUDENTS_API = 'http://localhost:3000/students'
-const APPOINTMENTS_API = 'http://localhost:3000/appointments'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const STUDENTS_API = `${API_URL}/students`
+const APPOINTMENTS_API = `${API_URL}/appointments`
 
 const getAuthConfig = () => ({
     headers: {
@@ -15,9 +16,15 @@ export const getMyPatients = (userId) =>
         getAuthConfig()
     )
 
-export const createStudent = (data) =>
+export const getAllStudents = () =>
+    axios.get(
+        `${STUDENTS_API}?limit=1000`,
+        getAuthConfig()
+    )
+
+export const linkPatient = (data) =>
     axios.post(
-        STUDENTS_API,
+        `${APPOINTMENTS_API}/session`,
         data,
         getAuthConfig()
     )
